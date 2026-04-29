@@ -1,0 +1,132 @@
+import { useState, useEffect } from 'react';
+import './App.css';
+
+function App() {
+  const [marches, setMarches] = useState([]);
+  const [produits, setProduits] = useState([]);
+  const [prixParProduit, setPrixParProduit] = useState({});
+  const [statsParProduit, setStatsParProduit] = useState({});
+  const [categorie, setCategorie] = useState('');
+
+  useEffect(() => {
+    fetch('http://localhost:3000/marches')
+      .then(res => res.json())
+      .then(data => setMarches(data));
+
+    fetch('http://localhost:3000/produits')
+      .then(res => res.json())
+      .then(data => {
+        setProduits(data);
+        data.forEach(p => {
+          fetch(`http://localhost:3000/prix/marches/${p.idprod}`)
+            .then(res => res.json())
+            .then(prix => {
+              setPrixParProduit(prev => ({...prev, [p.idprod]: prix}));
+            });
+          fetch(`http://localhost:3000/prix/stats/${p.idprod}`)
+            .then(res => res.json())
+            .then(stats => {
+              setStatsParProduit(prev => ({...prev, [p.idprod]: stats}));
+            });
+        });
+      });
+  }, []);
+
+  const produitsFiltres = categorie
+    ? produits.filter(p => p.categorie === categorie)
+    : produits;
+
+  const categories = [...new Set(produits.map(p => p.categorie))];
+
+  return (
+    <div className="app">
+      <header className="header">
+        <h1> Suivi des Prix des Marchés</h1>
+        <p>Collecte et analyse des prix des denrées alimentaires</p>
+      </header>
+
+      <div className="container">
+
+        <section className="section">
+          <h2> Marchés Locaux</h2>
+          <div className="cards">
+            {marches.map(m => (
+              <div className="card" key={m.id}>
+                <h3>{m.nom}</h3>
+                <p> {m.localisation}</p>
+                <p> {m.ville}</p>
+                <p> {m.jour_marche}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="section">
+          <h2> Produits</h2>
+          <div className="filtre">
+            <label>Filtrer par catégorie : </label>
+            <select onChange={e => setCategorie(e.target.value)}>
+              <option value="">Tous</option>
+              {categories.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="cards-produit">
+            {produitsFiltres.map(p => (
+              <div className="card-produit" key={p.idprod}>
+
+                <div className="produit-header">
+                  <h3>{p.nom}</h3>
+                  <span className="badge">{p.categorie}</span>
+                </div>
+                <p>Unité : {p.unite}</p>
+
+                <hr style={{margin:'10px 0'}}/>
+
+                <p><strong> Prix par marché :</strong></p>
+                {prixParProduit[p.idprod] && prixParProduit[p.idprod].length > 0
+                  ? prixParProduit[p.idprod].map((px, i) => (
+                    <div className="prix-ligne" key={i}>
+                      <span> {px.marche}</span>
+                      <strong>{px.prix} FCFA/kg</strong>
+                    </div>
+                  ))
+                  : <p style={{color:'#999'}}>Aucun prix disponible</p>
+                }
+
+                <hr style={{margin:'10px 0'}}/>
+
+                <p><strong> Statistiques :</strong></p>
+                {statsParProduit[p.idprod] && (
+                  <div className="stats-mini">
+                    <div className="stat-mini-card">
+                      <p>Marchés</p>
+                      <h4>{statsParProduit[p.idprod].nombre_marches}</h4>
+                    </div>
+                    <div className="stat-mini-card">
+                      <p>Min</p>
+                      <h4>{statsParProduit[p.idprod].prix_min} F</h4>
+                    </div>
+                    <div className="stat-mini-card">
+                      <p>Max</p>
+                      <h4>{statsParProduit[p.idprod].prix_max} F</h4>
+                    </div>
+                    <div className="stat-mini-card">
+                      <p>Moyenne</p>
+                      <h4>{statsParProduit[p.idprod].moyenne} F</h4>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            ))}
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+}
+
+export default App;
