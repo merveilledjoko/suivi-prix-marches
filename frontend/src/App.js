@@ -1,41 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 
+const MARCHES = [
+  {id:1, nom:"Marche central", localisation:"Centre-ville", ville:"Yaounde", jour_marche:"tous les jours"},
+  {id:2, nom:"Marche Mvog-betsi", localisation:"Mvog-betsi", ville:"Yaounde", jour_marche:"samedi"},
+  {id:3, nom:"Ndokoti", localisation:"Centre-ville", ville:"Douala", jour_marche:"tous les jours"}
+];
+
+const PRODUITS = [
+  {idprod:1, nom:"Tomate", categorie:"legume", unite:"kg", prix:[{marche:"Marche central",prix:250},{marche:"Ndokoti",prix:50}], stats:{nombre_marches:2,prix_min:50,prix_max:250,moyenne:150,somme:300}},
+  {idprod:2, nom:"Riz", categorie:"cereale", unite:"kg", prix:[{marche:"Ndokoti",prix:650},{marche:"Marche Mvog-betsi",prix:750}], stats:{nombre_marches:2,prix_min:650,prix_max:750,moyenne:700,somme:1400}},
+  {idprod:3, nom:"Goyave", categorie:"fruit", unite:"kg", prix:[{marche:"Ndokoti",prix:100}], stats:{nombre_marches:1,prix_min:100,prix_max:100,moyenne:100,somme:100}},
+  {idprod:4, nom:"Boeuf", categorie:"viande", unite:"kg", prix:[{marche:"Marche Mvog-betsi",prix:3500},{marche:"Marche central",prix:2500}], stats:{nombre_marches:2,prix_min:2500,prix_max:3500,moyenne:3000,somme:6000}},
+  {idprod:5, nom:"Poisson", categorie:"poisson", unite:"kg", prix:[{marche:"Marche Mvog-betsi",prix:1500}], stats:{nombre_marches:1,prix_min:1500,prix_max:1500,moyenne:1500,somme:1500}}
+];
+
 function App() {
-  const [marches, setMarches] = useState([]);
-  const [produits, setProduits] = useState([]);
-  const [prixParProduit, setPrixParProduit] = useState({});
-  const [statsParProduit, setStatsParProduit] = useState({});
   const [categorie, setCategorie] = useState('');
-  useEffect(() => {
-    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com/marches')
-      .then(res => res.json())
-      .then(data => setMarches(data));
-
-    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com/produits')
-      .then(res => res.json())
-      .then(data => {
-        setProduits(data);
-        data.forEach(p => {
-          fetch(`https://djoko-yimdjo-merveille-25g2073.onrender.com/prix/marches/${p.idprod}`)
-            .then(res => res.json())
-            .then(prix => {
-              setPrixParProduit(prev => ({...prev, [p.idprod]: prix}));
-            });
-          fetch(`https://djoko-yimdjo-merveille-25g2073.onrender.com/prix/stats/${p.idprod}`)
-            .then(res => res.json())
-            .then(stats => {
-              setStatsParProduit(prev => ({...prev, [p.idprod]: stats}));
-            });
-        });
-      });
-  }, []);
-
-  const produitsFiltres = categorie
-    ? produits.filter(p => p.categorie === categorie)
-    : produits;
-
-  const categories = [...new Set(produits.map(p => p.categorie))];
+  const categories = [...new Set(PRODUITS.map(p => p.categorie))];
+  const produitsFiltres = categorie ? PRODUITS.filter(p => p.categorie === categorie) : PRODUITS;
 
   return (
     <div className="app">
@@ -43,23 +26,20 @@ function App() {
         <h1> Suivi des Prix des Marchés</h1>
         <p>Collecte et analyse des prix des denrées alimentaires</p>
       </header>
-
       <div className="container">
-
         <section className="section">
           <h2> Marchés Locaux</h2>
           <div className="cards">
-            {marches.map(m => (
+            {MARCHES.map(m => (
               <div className="card" key={m.id}>
                 <h3>{m.nom}</h3>
                 <p> {m.localisation}</p>
-                <p> {m.ville}</p>
+                <p>{m.ville}</p>
                 <p> {m.jour_marche}</p>
               </div>
             ))}
           </div>
         </section>
-
         <section className="section">
           <h2> Produits</h2>
           <div className="filtre">
@@ -74,55 +54,31 @@ function App() {
           <div className="cards-produit">
             {produitsFiltres.map(p => (
               <div className="card-produit" key={p.idprod}>
-
                 <div className="produit-header">
                   <h3>{p.nom}</h3>
                   <span className="badge">{p.categorie}</span>
                 </div>
                 <p>Unité : {p.unite}</p>
-
-                <hr style={{margin:'10px 0'}}/>
-
+                <hr/>
                 <p><strong> Prix par marché :</strong></p>
-                {prixParProduit[p.idprod] && prixParProduit[p.idprod].length > 0
-                  ? prixParProduit[p.idprod].map((px, i) => (
-                    <div className="prix-ligne" key={i}>
-                      <span> {px.marche}</span>
-                      <strong>{px.prix} FCFA/kg</strong>
-                    </div>
-                  ))
-                  : <p style={{color:'#999'}}>Aucun prix disponible</p>
-                }
-
-                <hr style={{margin:'10px 0'}}/>
-
-                <p><strong> Statistiques :</strong></p>
-                {statsParProduit[p.idprod] && (
-                  <div className="stats-mini">
-                    <div className="stat-mini-card">
-                      <p>Marchés</p>
-                      <h4>{statsParProduit[p.idprod].nombre_marches}</h4>
-                    </div>
-                    <div className="stat-mini-card">
-                      <p>Min</p>
-                      <h4>{statsParProduit[p.idprod].prix_min} F</h4>
-                    </div>
-                    <div className="stat-mini-card">
-                      <p>Max</p>
-                      <h4>{statsParProduit[p.idprod].prix_max} F</h4>
-                    </div>
-                    <div className="stat-mini-card">
-                      <p>Moyenne</p>
-                      <h4>{statsParProduit[p.idprod].moyenne} F</h4>
-                    </div>
+                {p.prix.map((px, i) => (
+                  <div className="prix-ligne" key={i}>
+                    <span> {px.marche}</span>
+                    <strong>{px.prix} FCFA/kg</strong>
                   </div>
-                )}
-
+                ))}
+                <hr/>
+                <p><strong> Statistiques :</strong></p>
+                <div className="stats-mini">
+                  <div className="stat-mini-card"><p>Marchés</p><h4>{p.stats.nombre_marches}</h4></div>
+                  <div className="stat-mini-card"><p>Min</p><h4>{p.stats.prix_min} F</h4></div>
+                  <div className="stat-mini-card"><p>Max</p><h4>{p.stats.prix_max} F</h4></div>
+                  <div className="stat-mini-card"><p>Moyenne</p><h4>{p.stats.moyenne} F</h4></div>
+                </div>
               </div>
             ))}
           </div>
         </section>
-
       </div>
     </div>
   );
