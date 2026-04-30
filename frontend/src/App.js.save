@@ -7,22 +7,23 @@ function App() {
   const [prixParProduit, setPrixParProduit] = useState({});
   const [statsParProduit, setStatsParProduit] = useState({});
   const [categorie, setCategorie] = useState('');
+
   useEffect(() => {
-    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com/marches')
+    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com')
       .then(res => res.json())
       .then(data => setMarches(data));
 
-    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com/produits')
+    fetch('https://djoko-yimdjo-merveille-25g2073.onrender.com')
       .then(res => res.json())
       .then(data => {
         setProduits(data);
         data.forEach(p => {
-          fetch(`https://djoko-yimdjo-merveille-25g2073.onrender.com/prix/marches/${p.idprod}`)
+          fetch(`http://localhost:3000/prix/marches/${p.idprod}`)
             .then(res => res.json())
             .then(prix => {
               setPrixParProduit(prev => ({...prev, [p.idprod]: prix}));
             });
-          fetch(`https://djoko-yimdjo-merveille-25g2073.onrender.com/prix/stats/${p.idprod}`)
+          fetch(`http://localhost:3000/prix/stats/${p.idprod}`)
             .then(res => res.json())
             .then(stats => {
               setStatsParProduit(prev => ({...prev, [p.idprod]: stats}));
